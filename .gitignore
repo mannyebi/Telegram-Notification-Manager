@@ -164,7 +164,6 @@ cython_debug/
 
 
 .vscode/
-start.sh
 
 app/crawler.py
 app/encryption.py

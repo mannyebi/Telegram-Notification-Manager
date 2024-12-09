@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS messages (
 #### Telethon required variables :
 - you can get this data [here](my.telegram.org).
 ```
-redirect_from = os.getenv("redirect_from") # you can add your desired channel for listening
+desired_channel = os.getenv("desired_channel") # you can add your desired channel for listening
 session_user = os.getenv("session_user")
 session_bot = os.getenv("session_bot")
 api_id = os.getenv("api_id")
