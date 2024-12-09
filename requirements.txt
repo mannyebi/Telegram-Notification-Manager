@@ -1,0 +1,6 @@
+psycopg2==2.9.10
+pyaes==1.6.1
+pyahocorasick==2.1.0
+pyasn1==0.6.1
+rsa==4.9
+Telethon==1.38.1
