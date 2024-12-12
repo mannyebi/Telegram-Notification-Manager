@@ -1,19 +1,26 @@
 import psycopg2
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def get_connection():
     """Connect to postgresql database
     """
-    
-    connection = psycopg2.connect(
-        user = os.getenv("db_user"),
-        password = os.getenv("db_password"),
-        host = os.getenv("db_host"),
-        port = os.getenv("db_port"),
-        dbname =os.getenv("db_dbname")
-    )
-    return connection
+    try:
+        connection = psycopg2.connect(
+            user = os.getenv("db_user"),
+            password = os.getenv("db_password"),
+            host = os.getenv("db_host"),
+            port = os.getenv("db_port"),
+            dbname =os.getenv("db_dbname")
+        )
+        logger.info('successfull connection with database')
+        return connection
+    except Exception as e:
+        logger.exception('connection failed with database -> %s', e)
+
 
 
 
@@ -27,7 +34,7 @@ async def execute_query(query: str, values: tuple, fetch: bool):
 
     Returns:
         Union[bool, list]: Returns True if the query executes successfully (for non-SELECT queries),
-                           or a list of rows if fetching data (for SELECT queries).
+        or a list of rows if fetching data (for SELECT queries).
     """
     conn = await get_connection()
     with conn.cursor() as cursor:
@@ -35,12 +42,17 @@ async def execute_query(query: str, values: tuple, fetch: bool):
             cursor.execute(query, values)
             if fetch:
                 result = cursor.fetchall()
+                logger.info("Fetching query was successfull !")
+
                 return result
             else:
                 conn.commit()
+                logger.info("query was successfull !")
+
                 return True
+            
         except Exception as e:
-            print(f"Error inserting user: {e}")
+            logger.exception("an ERROR occured in executing query -> %s", e)
             return False
         finally:
             if conn:

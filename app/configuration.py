@@ -3,6 +3,11 @@ from telethon.sessions import StringSession
 import os
 import asyncio
 from db import retrieve_all_users
+import logging
+import logging_config
+
+
+logger = logging.getLogger(__name__)
 
 
 print(f"DEGBU -> {os.getenv("DEBUG", True)}")
@@ -17,13 +22,19 @@ bot_token = os.getenv("bot_token")
 
 
 
+try:
+    client_bot = TelegramClient(StringSession(session_bot), api_id, api_hash
+    ).start(bot_token)
+    logger.info("client_bot started")
+except Exception as e:
+    logger.exception("ERROR occured while starting client_bot -> %s", e)
 
-client_bot = TelegramClient(StringSession(session_bot), api_id, api_hash
-).start(bot_token)
-
-client_user = TelegramClient(StringSession(session_user), api_id, api_hash, 
-).start()
-
+try:
+    client_user = TelegramClient(StringSession(session_user), api_id, api_hash, 
+    ).start()
+    logger.info("client_user started")
+except Exception as e:
+    logger.exception("ERROR occured while starting client_user -> %s", e)
 
 
 async def send_sorry_message():

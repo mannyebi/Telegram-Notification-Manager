@@ -5,7 +5,11 @@ from db import add_user, add_keyword, retireve_keywords, retireve_keyword, delet
 import datetime
 from keyword_matches import search
 import os
+import logging
+import logging_config
 
+
+logger = logging.getLogger(__name__)
 
 
 user_state = {}
@@ -152,6 +156,7 @@ async def callback_handler(event):
 
     if event.data == b"add_keyword_btn": #Dialog that make user aware of how to add a keyword
         await keyword_adding_dialog(event)
+        logger.info("add keywrod button got pushed by %s", event.sender_id)
 
     elif data.startswith("save_keyword"): #Save recieved keyword
         keyword = data.split("save_keyword:")[1]
@@ -162,8 +167,10 @@ async def callback_handler(event):
                 if result:
                     keywords_list_buttons = await generate_keyword_list(event.sender_id)
                     await event.edit("کلمه کلیدی با موفقیت اضافه شد ✅", buttons=keywords_list_buttons)
+                    logger.info("save keyword button pushed by %s and keyword added succesfully.", event.sender_id)
                 else:
                     await event.edit("مشکلی پیش آمده ⚠️")
+                    logger.exception("a problem occured while saving keyword !")
             else:
                 await event.edit("این کلمه ی کلیدی قبلا ثبت شده است. ⚠️", buttons=add_keyword_btn_inline)
         else:
@@ -181,8 +188,10 @@ async def callback_handler(event):
         if result:
             keywords_list_buttons = await generate_keyword_list(event.sender_id)
             await event.edit("کلمه کلیدی با موفقیت حذف شد ✅", buttons=keywords_list_buttons)
+            logger.info("keyword successfully deleted by user %s", event.sender_id)
         else:
             await event.edit("مشکلی پیش آمده.")
+            logger.exception("An ERROR occured while deleting keyword by user %s", event.sender_id)
 
     elif data.startswith("add_again"):
         await keyword_adding_dialog(event)
@@ -206,7 +215,14 @@ async def handle_start_command(event):
         await client_bot.send_message(chat_id, f"""**سلام {first_name} {last_name} عزیز** \n اسم اساتید یا واحد هات رو به عنوان کلمه ی کلیدی اضافه کن. هر اطلاعیه ی جدیدی مطابق با کلمات کلیدی ثبت شده ی شما در کانال دانشگاه گذاشته شود این ربات به شما خبر میدهد 😉""", 
         buttons=add_keyword_btn_inline)
 
-        await add_user(sender.id, sender.username, sender.first_name, sender.last_name, sender.phone)
+        result = await add_user(sender.id, sender.username, sender.first_name, sender.last_name, sender.phone)
+        if result:
+            logger.info('user added succesfully to database')
+        else:
+            logger.exception("an ERROR occured while adding user to database !")
+    
+    else:
+        logger.warning("but started in a place which is not a user chat!")
 
 
 
@@ -246,6 +262,7 @@ async def handle_new_message(event):
     elif event.message.text == "یه قهوه مهمونم کن ☕":
         button = Button.url("☕خرید قهوه", "http://www.coffeete.ir/MANNY")
         await event.respond("بعد از کلیک روی دکمه خرید قهوه وارد سایت خرید قهوه میشی. خوشحال میشم اگه اسمت رو توی بخش توضیحات بنویسی ❤️", buttons=button)
+        logger.info("user %s clicked on DONATE button", event.sender_id)
 
 
 
@@ -265,41 +282,53 @@ async def menu(event):
 
 @client_user.on(events.NewMessage(chats=desired_channel))
 async def new_message_handler(event):
+    logger.info("New message from %s tracked.", desired_channel)
     try:
         result = await add_newMessage(event.id, event.message.message, "new", datetime.datetime.now())
         if result:
+            logger.info("The message added to database successfully.")
             await search(event, New=True)
+            logger.info("The sent to searching algorithm.")
         else:
-            print(result)
+            logger.exception("an ERROR occured while adding message to database")
+
     except Exception as e:
-        print(f"ERROR -> {e}")
+        logger.exception("ERROR occured in one of [reading - adding to db - sending to search()] setps (new_message_handler) -> %s", e)
 
 
 
 @client_user.on(events.MessageEdited(chats=desired_channel))
 async def edited_message_handler(event):
+    logger.info("An edited message from %s tracked.", desired_channel)
     try:
         result = await update_message(event.id, event.message.message, "new", datetime.datetime.now())
+
         if result:
+            logger.info("message status and date update in database to UPDATED.")
             await search(event, Updated=True)
+            logger.info("Updated message sent to searching algorithm.")
+        else:
+            logger.exception("an ERROR occured while updating and edited message to database.")
+
     except Exception as e:
-        print(f"ERROR -> {e}")
+        logger.exception("ERROR occured in one of [reading - adding to db - sending to search()] setps (edited_message_handler) -> %s", e)
     await update_message(event.id, event.text, "updated", datetime.datetime.now())
 
 
 
 @client_user.on(events.MessageDeleted(chats=desired_channel))
 async def deleted_message_handler(event):
+    logger.info("A DELETED message from %s tracked.", desired_channel)
     try:
         result = await delete_message(event.deleted_id, datetime.datetime.now())
         if result:
+            logger.info("message status and date update in database to DELETED.")
             await search(event, Deleted=True)
+            logger.info("DELETED message sent to searching algorithm.")
+        else:
+            logger.exception("ERROR occured in one of [reading - adding to db - sending to search()] setps (deleted_message_handler) -> %s", e)
     except Exception as e:
-        print(f"ERROR -> {e}")
-
-
-
-
+        logger.exception("ERROR occured in one of [reading - adding to db - sending to search()] setps (edited_message_handler) -> %s", e)
 
 
 client_bot.run_until_disconnected()
