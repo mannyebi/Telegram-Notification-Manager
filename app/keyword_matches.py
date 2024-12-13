@@ -30,8 +30,11 @@ async def search(event, New=False, Updated=False, Deleted=False):
     except :
         message_id = event.deleted_id
         message_text = await retrieve_message(message_id)
-        message = message_text[0][0]
-        text = ' '.join(message.split()) #removing extra spaces.
+        if message_text:
+            message = message_text[0][0]
+            text = ' '.join(message.split()) #removing extra spaces.
+        else:
+            return
 
 
     results = {}
