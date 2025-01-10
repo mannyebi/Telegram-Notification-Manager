@@ -6,7 +6,6 @@ import datetime
 from keyword_matches import search
 import os
 import logging
-import logging_config
 
 
 logger = logging.getLogger(__name__)
@@ -244,7 +243,7 @@ async def handle_new_message(event):
         keyword = event.message.text
         user_state[event.sender_id] = None
         buttons = [
-            [ Button.inline("🟡 ویرایش کلمه کلیدی", f"add_again") , Button.inline("✅ ثبت کلمه کلیدی", f"save_keyword:{keyword}")]
+            [ Button.inline("🟡 نه منصرف شدم", f"add_again") , Button.inline("✅ ثبت کلمه کلیدی", f"save_keyword:{keyword}")]
         ]
         await event.respond(f"کلمه کلیدی دریافت شد: {keyword}", buttons=buttons)
 
